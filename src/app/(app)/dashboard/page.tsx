@@ -1,17 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { mockCustomer, getTimeOfDayGreeting } from "@/lib/mockUser";
 import {
   ChevronDown,
   Bell,
-  Settings,
   Search,
   ScanLine,
   Star,
-  Home,
-  MessageCircle,
-  Heart,
-  User,
   Carrot,
   Scissors,
   Plug,
@@ -51,6 +48,11 @@ const topShoppers = [
 ];
 
 export default function DashboardPage() {
+  // avoids a server/client hydration mismatch — the greeting depends on
+  // the viewer's local time, which is only known once mounted in-browser
+  const [greeting, setGreeting] = useState<string | null>(null);
+  useEffect(() => setGreeting(getTimeOfDayGreeting()), []);
+
   return (
     <main className="min-h-screen bg-white text-charcoal pb-32">
       <div className="mx-auto max-w-md px-5 pt-6">
@@ -65,15 +67,18 @@ export default function DashboardPage() {
               </p>
             </div>
           </button>
-          <div className="flex items-center gap-2">
-            <button className="w-10 h-10 rounded-full bg-paper flex items-center justify-center">
-              <Settings size={18} className="text-ink" />
-            </button>
-            <button className="w-10 h-10 rounded-full bg-paper flex items-center justify-center">
-              <Bell size={18} className="text-ink" />
-            </button>
-          </div>
+          <Link
+            href="/notifications"
+            className="w-10 h-10 rounded-full bg-paper flex items-center justify-center flex-shrink-0"
+          >
+            <Bell size={18} className="text-ink" />
+          </Link>
         </div>
+
+        {/* ===== greeting ===== */}
+        <p className="text-charcoal/50 text-sm mb-1 h-5">
+          {greeting && `${greeting}, ${mockCustomer.fullName.split(" ")[0]} 👋`}
+        </p>
 
         {/* ===== heading ===== */}
         <h1 className="font-display font-bold text-3xl leading-tight mb-6">
@@ -124,9 +129,12 @@ export default function DashboardPage() {
             <p className="font-display font-semibold text-base leading-snug mb-3">
               Verified shoppers are already at Mile 12 Market
             </p>
-            <button className="rounded-full bg-mint text-ink text-xs font-medium px-4 py-2">
+            <Link
+              href="/errand/food-market"
+              className="inline-block rounded-full bg-mint text-ink text-xs font-medium px-4 py-2 hover:opacity-90 transition-opacity"
+            >
               Post an errand
-            </button>
+            </Link>
           </div>
           <span className="absolute right-0 bottom-0 text-7xl opacity-20 translate-x-2 translate-y-2">
             🧺
@@ -170,25 +178,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ===== floating bottom nav ===== */}
-      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white/90 backdrop-blur-md rounded-full shadow-lg shadow-black/10 border border-black/5">
-        <div className="flex items-center gap-1 py-1.5 px-1.5">
-          <button className="flex items-center gap-1.5 bg-mint/15 text-teal rounded-full px-3.5 py-2">
-            <Home size={16} />
-            <span className="font-mono text-[9px] font-medium">Home</span>
-          </button>
-          <button className="p-2.5 text-charcoal/40">
-            <MessageCircle size={16} />
-          </button>
-          <button className="p-2.5 text-charcoal/40">
-            <Heart size={16} />
-          </button>
-          <button className="p-2.5 text-charcoal/40 relative">
-            <User size={16} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-clay" />
-          </button>
-        </div>
-      </nav>
     </main>
   );
 }

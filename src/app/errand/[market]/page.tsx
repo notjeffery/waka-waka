@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Users,
   ArrowLeftRight,
+  Heart,
 } from "lucide-react";
 
 type ItemMode = "quantity" | "budget";
@@ -79,6 +80,24 @@ export default function ErrandMarketPage() {
   const [editedFee, setEditedFee] = useState("");
   const [shoppersNotified, setShoppersNotified] = useState(0);
   const [shoppersConsidering, setShoppersConsidering] = useState(0);
+  const [savedShopperIds, setSavedShopperIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("waka-saved-shoppers");
+      if (saved) setSavedShopperIds(JSON.parse(saved));
+    } catch {
+      // ignore corrupted storage
+    }
+  }, []);
+
+  const toggleSavedShopper = (id: string) => {
+    setSavedShopperIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id];
+      localStorage.setItem("waka-saved-shoppers", JSON.stringify(next));
+      return next;
+    });
+  };
 
   // reactive — updates live as items are added/removed, so the goods-worth
   // field appears/disappears without needing a step transition
@@ -389,46 +408,58 @@ export default function ErrandMarketPage() {
             </p>
 
             <div className="space-y-3">
-              {mockOffers.map((offer) => (
-                <div key={offer.id} className="rounded-2xl bg-paper p-4 flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-full bg-teal/10 flex items-center justify-center font-display font-bold text-teal flex-shrink-0">
-                    {offer.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="font-body font-semibold text-sm">{offer.name}</p>
-                      {offer.matchesBudget && (
-                        <span className="flex items-center gap-1 text-[10px] font-mono text-teal">
-                          <CheckCircle2 size={12} />
-                          Matches offer
+              {mockOffers.map((offer) => {
+                const isSaved = savedShopperIds.includes(offer.id);
+                return (
+                  <div key={offer.id} className="rounded-2xl bg-paper p-4 flex items-start gap-3">
+                    <div className="w-11 h-11 rounded-full bg-teal/10 flex items-center justify-center font-display font-bold text-teal flex-shrink-0">
+                      {offer.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="font-body font-semibold text-sm">{offer.name}</p>
+                        <div className="flex items-center gap-2">
+                          {offer.matchesBudget && (
+                            <span className="flex items-center gap-1 text-[10px] font-mono text-teal">
+                              <CheckCircle2 size={12} />
+                              Matches offer
+                            </span>
+                          )}
+                          <button
+                            onClick={() => toggleSavedShopper(offer.id)}
+                            className={isSaved ? "text-clay" : "text-charcoal/30"}
+                            title={isSaved ? "Remove from saved shoppers" : "Save this shopper"}
+                          >
+                            <Heart size={15} className={isSaved ? "fill-clay" : ""} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-charcoal/50">
+                        <span className="flex items-center gap-1">
+                          <Star size={11} className="fill-mint text-mint" />
+                          {offer.rating}
                         </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-charcoal/50">
-                      <span className="flex items-center gap-1">
-                        <Star size={11} className="fill-mint text-mint" />
-                        {offer.rating}
-                      </span>
-                      <span>{offer.categoryTrips} {marketLabel} trips</span>
-                    </div>
-                    <div className="flex items-center gap-1 mt-1 text-xs text-charcoal/50">
-                      <MapPin size={11} />
-                      {offer.market} · {offer.distanceKm}km away
-                    </div>
-                    <div className="flex items-center justify-between mt-3">
-                      <span className="font-mono font-semibold text-sm">
-                        ₦{offer.proposedFee.toLocaleString()}
-                      </span>
-                      <Link
-                        href={`/chat/${offer.id}`}
-                        className="rounded-full bg-ink text-paper text-xs font-medium px-4 py-2 hover:bg-teal transition-colors"
-                      >
-                        Select
-                      </Link>
+                        <span>{offer.categoryTrips} {marketLabel} trips</span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-1 text-xs text-charcoal/50">
+                        <MapPin size={11} />
+                        {offer.market} · {offer.distanceKm}km away
+                      </div>
+                      <div className="flex items-center justify-between mt-3">
+                        <span className="font-mono font-semibold text-sm">
+                          ₦{offer.proposedFee.toLocaleString()}
+                        </span>
+                        <Link
+                          href={`/chat/${offer.id}`}
+                          className="rounded-full bg-ink text-paper text-xs font-medium px-4 py-2 hover:bg-teal transition-colors"
+                        >
+                          Select
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
